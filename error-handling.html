@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geolocation API - Error Handling Tutorial</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #f44336;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .info {
+            color: #1976d2;
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .code-section {
+            margin: 20px 0;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .code-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toggle-code-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .toggle-code-btn:hover {
+            background-color: #2980b9;
+        }
+        .code-content {
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+        .code-content.show {
+            display: block;
+        }
+        pre {
+            margin: 0;
+            padding: 15px;
+            background-color: #282c34;
+            color: #abb2bf;
+            overflow-x: auto;
+        }
+        pre code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .code-comment {
+            color: #5c6370;
+        }
+        .code-keyword {
+            color: #c678dd;
+        }
+        .code-function {
+            color: #61afef;
+        }
+        .code-string {
+            color: #98c379;
+        }
+        .code-number {
+            color: #d19a66;
+        }
+        .error-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .error-card {
+            border-left: 4px solid;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .error-card.permission-denied {
+            border-color: #f44336;
+            background-color: #ffebee;
+        }
+        .error-card.position-unavailable {
+            border-color: #ff9800;
+            background-color: #fff3e0;
+        }
+        .error-card.timeout {
+            border-color: #ffc107;
+            background-color: #fffde7;
+        }
+        .error-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+        .error-code {
+            display: inline-block;
+            background-color: rgba(0,0,0,0.1);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            background-color: #f44336;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            flex: 1;
+            min-width: 200px;
+        }
+        button:hover:not(:disabled) {
+            background-color: #da190b;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            border: 2px solid #ef5350;
+        }
+        .success {
+            color: #2e7d32;
+            background-color: #e8f5e9;
+            border: 2px solid #66bb6a;
+        }
+        .property-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .property-table th,
+        .property-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .property-table th {
+            background-color: #f44336;
+            color: white;
+        }
+        .property-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .property-table code {
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Geolocation API - Error Handling Tutorial</h1>
+        
+        <div class="info">
+            <strong>このチュートリアルについて:</strong><br>
+            Geolocation APIの<code>GeolocationPositionError</code>について学びます。<br>
+            エラーの種類、原因、適切な対処方法を理解することができます。
+        </div>
+
+        <h2>📋 GeolocationPositionError プロパティ</h2>
+        <table class="property-table">
+            <thead>
+                <tr>
+                    <th>プロパティ</th>
+                    <th>型</th>
+                    <th>説明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>code</code></td>
+                    <td>number</td>
+                    <td>エラーコード (1, 2, 3 のいずれか)</td>
+                </tr>
+                <tr>
+                    <td><code>message</code></td>
+                    <td>string</td>
+                    <td>エラーの詳細メッセージ</td>
+                </tr>
+                <tr>
+                    <td><code>PERMISSION_DENIED</code></td>
+                    <td>1</td>
+                    <td>ユーザーが位置情報の使用を拒否</td>
+                </tr>
+                <tr>
+                    <td><code>POSITION_UNAVAILABLE</code></td>
+                    <td>2</td>
+                    <td>位置情報が取得できない</td>
+                </tr>
+                <tr>
+                    <td><code>TIMEOUT</code></td>
+                    <td>3</td>
+                    <td>タイムアウトが発生</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🔴 エラーの種類</h2>
+        <div class="error-types">
+            <div class="error-card permission-denied">
+                <h3>PERMISSION_DENIED <span class="error-code">code: 1</span></h3>
+                <p><strong>原因:</strong></p>
+                <ul>
+                    <li>ユーザーが位置情報の使用を拒否</li>
+                    <li>ブラウザの設定でブロックされている</li>
+                    <li>HTTPSではないページでのアクセス</li>
+                </ul>
+                <p><strong>対処法:</strong></p>
+                <ul>
+                    <li>ユーザーに許可を求める説明を表示</li>
+                    <li>ブラウザ設定の変更方法を案内</li>
+                    <li>代替手段（手動入力など）を提供</li>
+                </ul>
+            </div>
+
+            <div class="error-card position-unavailable">
+                <h3>POSITION_UNAVAILABLE <span class="error-code">code: 2</span></h3>
+                <p><strong>原因:</strong></p>
+                <ul>
+                    <li>GPSが利用できない（オフ、圏外など）</li>
+                    <li>Wi-Fiや基地局の情報が不足</li>
+                    <li>デバイスの位置情報サービスが無効</li>
+                </ul>
+                <p><strong>対処法:</strong></p>
+                <ul>
+                    <li>位置情報サービスの有効化を促す</li>
+                    <li>リトライ機能を実装</li>
+                    <li>低精度モードを試す</li>
+                </ul>
+            </div>
+
+            <div class="error-card timeout">
+                <h3>TIMEOUT <span class="error-code">code: 3</span></h3>
+                <p><strong>原因:</strong></p>
+                <ul>
+                    <li>指定したタイムアウト時間内に取得できない</li>
+                    <li>ネットワーク環境が悪い</li>
+                    <li>GPS信号の取得に時間がかかる</li>
+                </ul>
+                <p><strong>対処法:</strong></p>
+                <ul>
+                    <li>タイムアウト時間を延長</li>
+                    <li>リトライ機能を実装</li>
+                    <li>キャッシュの利用を検討</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>📝 サンプルコード</h2>
+        <div class="code-section">
+            <div class="code-header">
+                <span>エラーハンドリングの実装例</span>
+                <button class="toggle-code-btn" onclick="toggleCode()">表示/非表示</button>
+            </div>
+            <div id="codeContent" class="code-content">
+                <pre><code><span class="code-comment">// エラーハンドリングの実装</span>
+navigator.geolocation.<span class="code-function">getCurrentPosition</span>(
+    <span class="code-comment">// 成功時のコールバック</span>
+    <span class="code-keyword">function</span>(position) {
+        <span class="code-keyword">const</span> positionData = position.<span class="code-function">toJSON</span>();
+        console.<span class="code-function">log</span>(<span class="code-string">'位置情報:'</span>, positionData);
+    },
+    <span class="code-comment">// エラー時のコールバック</span>
+    <span class="code-keyword">function</span>(error) {
+        <span class="code-comment">// エラーコードによる分岐処理</span>
+        <span class="code-keyword">switch</span>(error.code) {
+            <span class="code-keyword">case</span> error.PERMISSION_DENIED:
+                <span class="code-comment">// code: 1</span>
+                console.<span class="code-function">error</span>(<span class="code-string">'位置情報の使用が拒否されました'</span>);
+                <span class="code-comment">// ユーザーに許可を求めるUIを表示</span>
+                <span class="code-function">showPermissionDialog</span>();
+                <span class="code-keyword">break</span>;
+            
+            <span class="code-keyword">case</span> error.POSITION_UNAVAILABLE:
+                <span class="code-comment">// code: 2</span>
+                console.<span class="code-function">error</span>(<span class="code-string">'位置情報が取得できません'</span>);
+                <span class="code-comment">// リトライまたは代替手段を提供</span>
+                <span class="code-function">showRetryButton</span>();
+                <span class="code-keyword">break</span>;
+            
+            <span class="code-keyword">case</span> error.TIMEOUT:
+                <span class="code-comment">// code: 3</span>
+                console.<span class="code-function">error</span>(<span class="code-string">'位置情報の取得がタイムアウトしました'</span>);
+                <span class="code-comment">// リトライを試みる</span>
+                <span class="code-function">retryWithLongerTimeout</span>();
+                <span class="code-keyword">break</span>;
+            
+            <span class="code-keyword">default</span>:
+                console.<span class="code-function">error</span>(<span class="code-string">'不明なエラー:'</span>, error.message);
+        }
+    },
+    <span class="code-comment">// オプション</span>
+    {
+        enableHighAccuracy: <span class="code-keyword">true</span>,
+        timeout: <span class="code-number">10000</span>,        <span class="code-comment">// 10秒</span>
+        maximumAge: <span class="code-number">0</span>
+    }
+);</code></pre>
+            </div>
+        </div>
+
+        <h2>🧪 エラーのテスト</h2>
+        <p>以下のボタンで各エラーケースをシミュレートできます：</p>
+        
+        <div class="button-group">
+            <button onclick="testPermissionDenied()">
+                🚫 PERMISSION_DENIED をテスト
+            </button>
+            <button onclick="testTimeout()">
+                ⏱️ TIMEOUT をテスト
+            </button>
+            <button onclick="testNormalRequest()">
+                ✅ 正常な位置情報取得
+            </button>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+
+        function toggleCode() {
+            const codeContent = document.getElementById('codeContent');
+            codeContent.classList.toggle('show');
+        }
+
+        function displayError(error) {
+            resultDiv.className = 'error';
+            
+            const errorInfo = {
+                code: error.code,
+                message: error.message,
+                codeName: getErrorCodeName(error.code),
+                description: getErrorDescription(error.code)
+            };
+            
+            resultDiv.innerHTML = 
+                '<strong>🚨 GeolocationPositionError が発生しました:</strong>\n\n' +
+                JSON.stringify(errorInfo, null, 2);
+        }
+
+        function displaySuccess(position) {
+            resultDiv.className = 'success';
+            const positionData = position.toJSON();
+            resultDiv.innerHTML = 
+                '<strong>✅ 位置情報の取得に成功しました:</strong>\n\n' +
+                JSON.stringify(positionData, null, 2);
+        }
+
+        function getErrorCodeName(code) {
+            switch(code) {
+                case 1: return 'PERMISSION_DENIED';
+                case 2: return 'POSITION_UNAVAILABLE';
+                case 3: return 'TIMEOUT';
+                default: return 'UNKNOWN_ERROR';
+            }
+        }
+
+        function getErrorDescription(code) {
+            switch(code) {
+                case 1: return 'ユーザーが位置情報の使用を拒否しました';
+                case 2: return '位置情報が取得できませんでした';
+                case 3: return 'タイムアウトが発生しました';
+                default: return '不明なエラーが発生しました';
+            }
+        }
+
+        function testPermissionDenied() {
+            resultDiv.innerHTML = '位置情報の取得を試みています...\n実際のブラウザの許可ダイアログが表示されます。';
+            resultDiv.className = '';
+            
+            // 実際のGeolocation APIを呼び出し
+            // ユーザーが「ブロック」を選択すればPERMISSION_DENIEDが発生
+            navigator.geolocation.getCurrentPosition(
+                displaySuccess,
+                displayError,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function testTimeout() {
+            resultDiv.innerHTML = 'タイムアウトのテスト中...\n（極端に短いタイムアウトを設定）';
+            resultDiv.className = '';
+            
+            // 1ミリ秒という極端に短いタイムアウトを設定してTIMEOUTを発生させる
+            navigator.geolocation.getCurrentPosition(
+                displaySuccess,
+                displayError,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 1, // 1ms - ほぼ確実にタイムアウト
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function testNormalRequest() {
+            resultDiv.innerHTML = '位置情報を取得中...';
+            resultDiv.className = '';
+            
+            // 通常の設定で位置情報を取得
+            navigator.geolocation.getCurrentPosition(
+                displaySuccess,
+                displayError,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        // ページ読み込み時にGeolocation APIのサポート確認
+        window.addEventListener('DOMContentLoaded', function() {
+            if (!navigator.geolocation) {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = 
+                    '<strong>⚠️ お使いのブラウザはGeolocation APIをサポートしていません</strong>\n\n' +
+                    '最新のブラウザをご使用ください。';
+            }
+        });
+    </script>
+</body>
+</html>

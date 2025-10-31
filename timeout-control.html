@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geolocation API - Timeout Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #FF5722;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .info {
+            color: #1976d2;
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .warning {
+            color: #f57c00;
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .tip {
+            color: #388e3c;
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .code-section {
+            margin: 20px 0;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .code-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toggle-code-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .toggle-code-btn:hover {
+            background-color: #2980b9;
+        }
+        .code-content {
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+        .code-content.show {
+            display: block;
+        }
+        pre {
+            margin: 0;
+            padding: 15px;
+            background-color: #282c34;
+            color: #abb2bf;
+            overflow-x: auto;
+        }
+        pre code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .code-comment {
+            color: #5c6370;
+        }
+        .code-keyword {
+            color: #c678dd;
+        }
+        .code-function {
+            color: #61afef;
+        }
+        .code-string {
+            color: #98c379;
+        }
+        .code-number {
+            color: #d19a66;
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #FF5722;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #E64A19;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .result-container {
+            margin-top: 20px;
+        }
+        .result-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .result-item.success {
+            border-color: #4CAF50;
+            background-color: #e8f5e9;
+        }
+        .result-item.timeout {
+            border-color: #FF5722;
+            background-color: #ffebee;
+        }
+        .result-item.error {
+            border-color: #f44336;
+            background-color: #ffcdd2;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .status-badge.success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status-badge.timeout {
+            background-color: #FF5722;
+            color: white;
+        }
+        .status-badge.error {
+            background-color: #f44336;
+            color: white;
+        }
+        .timer {
+            display: inline-block;
+            background-color: #2196F3;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #FF5722;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .comparison-table th {
+            background-color: #FF5722;
+            color: white;
+        }
+        .comparison-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .comparison-table code {
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background-color: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+        .progress-bar.active {
+            display: block;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF5722, #FF9800);
+            width: 0%;
+            transition: width 0.1s linear;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏱️ Geolocation API - Timeout Control</h1>
+        
+        <div class="info">
+            <strong>このチュートリアルについて:</strong><br>
+            Geolocation APIの<code>timeout</code>オプションを使用したタイムアウト制御について学びます。<br>
+            適切なタイムアウト設定で、ユーザー体験を向上させる方法を理解できます。
+        </div>
+
+        <h2>⏰ timeout とは？</h2>
+        <p>
+            <code>timeout</code>は、位置情報の取得を待つ最大時間（ミリ秒）を指定します。
+            この時間内に位置情報が取得できない場合、<code>TIMEOUT</code>エラー（code: 3）が発生します。
+        </p>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>設定値</th>
+                    <th>動作</th>
+                    <th>使用ケース</th>
+                    <th>メリット/デメリット</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>Infinity</code></td>
+                    <td>タイムアウトなし（デフォルト）</td>
+                    <td>位置情報が必須で待てる場合</td>
+                    <td>✅ 確実に取得<br>❌ 無限に待つ可能性</td>
+                </tr>
+                <tr>
+                    <td><code>3000</code></td>
+                    <td>3秒でタイムアウト</td>
+                    <td>クイックレスポンスが必要</td>
+                    <td>✅ 高速<br>❌ 失敗しやすい</td>
+                </tr>
+                <tr>
+                    <td><code>5000</code></td>
+                    <td>5秒でタイムアウト</td>
+                    <td>一般的なモバイルアプリ</td>
+                    <td>✅ バランス良好<br>⚠️ 環境により失敗</td>
+                </tr>
+                <tr>
+                    <td><code>10000</code></td>
+                    <td>10秒でタイムアウト</td>
+                    <td>位置精度を重視する場合</td>
+                    <td>✅ 成功率高い<br>❌ 少し遅い</td>
+                </tr>
+                <tr>
+                    <td><code>30000</code></td>
+                    <td>30秒でタイムアウト</td>
+                    <td>初回の位置取得</td>
+                    <td>✅ 高確率で成功<br>❌ 長い待ち時間</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="warning">
+            <strong>⚠️ 注意:</strong><br>
+            タイムアウトを短くしすぎると、GPS初期化前にタイムアウトが発生する可能性があります。
+            特に初回アクセス時やコールドスタート時には、長めのタイムアウトを設定することを推奨します。
+        </div>
+
+        <div class="tip">
+            <strong>💡 ベストプラクティス:</strong><br>
+            • 初回取得: 10〜30秒の長めのタイムアウト<br>
+            • リアルタイム追跡: 5〜10秒の中程度のタイムアウト<br>
+            • クイックチェック: 3〜5秒の短めのタイムアウト<br>
+            • タイムアウト発生時はリトライ処理を実装する
+        </div>
+
+        <h2>📝 サンプルコード</h2>
+        <div class="code-section">
+            <div class="code-header">
+                <span>timeout の使用例とリトライ処理</span>
+                <button class="toggle-code-btn" onclick="toggleCode()">表示/非表示</button>
+            </div>
+            <div id="codeContent" class="code-content">
+                <pre><code><span class="code-comment">// パターン1: 基本的なタイムアウト設定</span>
+navigator.geolocation.<span class="code-function">getCurrentPosition</span>(
+    successCallback,
+    errorCallback,
+    {
+        enableHighAccuracy: <span class="code-keyword">true</span>,
+        timeout: <span class="code-number">5000</span>,        <span class="code-comment">// 5秒でタイムアウト</span>
+        maximumAge: <span class="code-number">0</span>
+    }
+);
+
+<span class="code-comment">// パターン2: タイムアウトとエラーハンドリング</span>
+navigator.geolocation.<span class="code-function">getCurrentPosition</span>(
+    <span class="code-keyword">function</span>(position) {
+        console.<span class="code-function">log</span>(<span class="code-string">'位置情報取得成功'</span>, position.<span class="code-function">toJSON</span>());
+    },
+    <span class="code-keyword">function</span>(error) {
+        <span class="code-keyword">if</span> (error.code === error.TIMEOUT) {
+            console.<span class="code-function">error</span>(<span class="code-string">'タイムアウトしました'</span>);
+            <span class="code-comment">// リトライ処理など</span>
+        }
+    },
+    { timeout: <span class="code-number">10000</span> }
+);
+
+<span class="code-comment">// パターン3: リトライ機能付き</span>
+<span class="code-keyword">function</span> <span class="code-function">getLocationWithRetry</span>(maxRetries = <span class="code-number">3</span>, timeout = <span class="code-number">5000</span>) {
+    <span class="code-keyword">let</span> retryCount = <span class="code-number">0</span>;
+    
+    <span class="code-keyword">function</span> <span class="code-function">attempt</span>() {
+        navigator.geolocation.<span class="code-function">getCurrentPosition</span>(
+            <span class="code-keyword">function</span>(position) {
+                console.<span class="code-function">log</span>(<span class="code-string">'成功!'</span>, position.<span class="code-function">toJSON</span>());
+            },
+            <span class="code-keyword">function</span>(error) {
+                <span class="code-keyword">if</span> (error.code === error.TIMEOUT && retryCount < maxRetries) {
+                    retryCount++;
+                    console.<span class="code-function">log</span>(<span class="code-string">`リトライ ${retryCount}/${maxRetries}`</span>);
+                    <span class="code-comment">// 次回はタイムアウトを延長</span>
+                    timeout = timeout * <span class="code-number">1.5</span>;
+                    <span class="code-function">attempt</span>();
+                } <span class="code-keyword">else</span> {
+                    console.<span class="code-function">error</span>(<span class="code-string">'位置情報の取得に失敗'</span>, error);
+                }
+            },
+            { timeout: timeout }
+        );
+    }
+    
+    <span class="code-function">attempt</span>();
+}
+
+<span class="code-comment">// パターン4: プログレス表示付き</span>
+<span class="code-keyword">function</span> <span class="code-function">getLocationWithProgress</span>(timeout = <span class="code-number">10000</span>) {
+    <span class="code-keyword">const</span> startTime = <span class="code-keyword">Date</span>.<span class="code-function">now</span>();
+    
+    <span class="code-comment">// プログレスバー更新</span>
+    <span class="code-keyword">const</span> interval = <span class="code-function">setInterval</span>(() => {
+        <span class="code-keyword">const</span> elapsed = <span class="code-keyword">Date</span>.<span class="code-function">now</span>() - startTime;
+        <span class="code-keyword">const</span> progress = (elapsed / timeout) * <span class="code-number">100</span>;
+        <span class="code-function">updateProgressBar</span>(progress);
+    }, <span class="code-number">100</span>);
+    
+    navigator.geolocation.<span class="code-function">getCurrentPosition</span>(
+        <span class="code-keyword">function</span>(position) {
+            <span class="code-function">clearInterval</span>(interval);
+            <span class="code-function">updateProgressBar</span>(<span class="code-number">100</span>);
+            console.<span class="code-function">log</span>(<span class="code-string">'取得完了'</span>);
+        },
+        <span class="code-keyword">function</span>(error) {
+            <span class="code-function">clearInterval</span>(interval);
+            console.<span class="code-function">error</span>(<span class="code-string">'エラー'</span>, error);
+        },
+        { timeout: timeout }
+    );
+}</code></pre>
+            </div>
+        </div>
+
+        <h2>🧪 インタラクティブデモ</h2>
+        <p>異なる<code>timeout</code>設定で位置情報を取得し、タイムアウトの動作を確認できます。</p>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="testTimeout(1)">
+                ⚡ 超短時間<br>(1ms)
+            </button>
+            <button onclick="testTimeout(1000)">
+                🏃 短時間<br>(1秒)
+            </button>
+            <button onclick="testTimeout(3000)">
+                🚶 普通<br>(3秒)
+            </button>
+            <button onclick="testTimeout(5000)">
+                🚶‍♂️ 標準<br>(5秒)
+            </button>
+            <button onclick="testTimeout(10000)">
+                🐢 長め<br>(10秒)
+            </button>
+            <button onclick="testTimeout(30000)">
+                🐌 超長時間<br>(30秒)
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="successCount">0</div>
+                <div class="stat-label">成功回数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="timeoutCount">0</div>
+                <div class="stat-label">タイムアウト回数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">合計試行回数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgTime">-</div>
+                <div class="stat-label">平均取得時間</div>
+            </div>
+        </div>
+
+        <div class="result-container" id="resultContainer"></div>
+    </div>
+
+    <script>
+        let successCount = 0;
+        let timeoutCount = 0;
+        let totalCount = 0;
+        let totalTime = 0;
+        let requestNumber = 0;
+        let progressInterval = null;
+
+        function toggleCode() {
+            const codeContent = document.getElementById('codeContent');
+            codeContent.classList.toggle('show');
+        }
+
+        function updateStats() {
+            document.getElementById('successCount').textContent = successCount;
+            document.getElementById('timeoutCount').textContent = timeoutCount;
+            document.getElementById('totalCount').textContent = totalCount;
+            
+            if (successCount > 0) {
+                const avgTime = (totalTime / successCount / 1000).toFixed(2);
+                document.getElementById('avgTime').textContent = avgTime + '秒';
+            } else {
+                document.getElementById('avgTime').textContent = '-';
+            }
+        }
+
+        function updateProgressBar(progress) {
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            
+            progressBar.classList.add('active');
+            progressFill.style.width = Math.min(progress, 100) + '%';
+            progressFill.textContent = Math.min(Math.round(progress), 100) + '%';
+            
+            if (progress >= 100) {
+                setTimeout(() => {
+                    progressBar.classList.remove('active');
+                    progressFill.style.width = '0%';
+                }, 1000);
+            }
+        }
+
+        function addResult(status, timeoutValue, elapsed, position = null, error = null) {
+            requestNumber++;
+            totalCount++;
+            
+            if (status === 'success') {
+                successCount++;
+                totalTime += elapsed;
+            } else if (status === 'timeout') {
+                timeoutCount++;
+            }
+            
+            updateStats();
+
+            const resultItem = document.createElement('div');
+            resultItem.className = `result-item ${status}`;
+            
+            let badgeText = '';
+            let content = '';
+            
+            if (status === 'success') {
+                badgeText = '✅ 成功';
+                const positionData = position.toJSON();
+                content = `
+<span class="status-badge success">${badgeText}</span><span class="timer">⏱️ ${(elapsed / 1000).toFixed(2)}秒</span>
+<strong>リクエスト #${requestNumber} - timeout: ${timeoutValue}ms</strong>
+
+位置情報:
+${JSON.stringify(positionData, null, 2)}
+                `.trim();
+            } else if (status === 'timeout') {
+                badgeText = '⏱️ タイムアウト';
+                content = `
+<span class="status-badge timeout">${badgeText}</span><span class="timer">⏱️ ${(elapsed / 1000).toFixed(2)}秒</span>
+<strong>リクエスト #${requestNumber} - timeout: ${timeoutValue}ms</strong>
+
+エラーコード: ${error.code}
+メッセージ: ${error.message}
+説明: 指定された時間内に位置情報を取得できませんでした
+                `.trim();
+            } else {
+                badgeText = '❌ エラー';
+                content = `
+<span class="status-badge error">${badgeText}</span>
+<strong>リクエスト #${requestNumber} - timeout: ${timeoutValue}ms</strong>
+
+エラーコード: ${error.code}
+メッセージ: ${error.message}
+                `.trim();
+            }
+            
+            resultItem.innerHTML = content;
+
+            const container = document.getElementById('resultContainer');
+            container.insertBefore(resultItem, container.firstChild);
+
+            // 最新5件のみ表示
+            while (container.children.length > 5) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        function testTimeout(timeoutValue) {
+            if (!navigator.geolocation) {
+                alert('このブラウザはGeolocation APIをサポートしていません。');
+                return;
+            }
+
+            const startTime = Date.now();
+            
+            // プログレスバーの更新
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            progressInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const progress = (elapsed / timeoutValue) * 100;
+                updateProgressBar(progress);
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                }
+            }, 50);
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    clearInterval(progressInterval);
+                    const elapsed = Date.now() - startTime;
+                    updateProgressBar(100);
+                    addResult('success', timeoutValue, elapsed, position);
+                },
+                function(error) {
+                    clearInterval(progressInterval);
+                    const elapsed = Date.now() - startTime;
+                    updateProgressBar(100);
+                    
+                    if (error.code === 3) { // TIMEOUT
+                        addResult('timeout', timeoutValue, elapsed, null, error);
+                    } else {
+                        addResult('error', timeoutValue, elapsed, null, error);
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: timeoutValue,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        // 初期メッセージ
+        window.addEventListener('DOMContentLoaded', function() {
+            if (!navigator.geolocation) {
+                const container = document.getElementById('resultContainer');
+                container.innerHTML = `
+                    <div class="result-item error">
+                        <strong>⚠️ お使いのブラウザはGeolocation APIをサポートしていません</strong>
+                    </div>
+                `;
+            } else {
+                const container = document.getElementById('resultContainer');
+                container.innerHTML = `
+                    <div class="result-item" style="border-color: #2196F3; background-color: #e3f2fd;">
+                        <strong>💡 ヒント:</strong>
+                        
+上のボタンをクリックして、異なるtimeout設定で位置情報を取得してください。
+短いタイムアウトではTIMEOUTエラーが発生しやすくなります。
+プログレスバーで取得の進行状況を確認できます。
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
