@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geolocation API Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .info-value {
+            color: #333;
+            text-align: right;
+            word-break: break-all;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.hidden {
+            display: none;
+        }
+
+        .map-container {
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 300px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-placeholder {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .watch-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: #28a745;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .feature-list {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .feature-list h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .feature-list ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            color: #666;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Geolocation API Demo</h1>
+        <p class="subtitle">ブラウザのGeolocation APIを使用した位置情報取得デモ</p>
+
+        <div class="button-group">
+            <button class="btn-primary" id="getCurrentPosition">現在地を取得</button>
+            <button class="btn-primary" id="watchPosition">位置監視を開始</button>
+            <button class="btn-secondary" id="stopWatching" disabled>監視を停止</button>
+        </div>
+
+        <div id="status" class="status hidden"></div>
+
+        <div id="locationInfo" class="info-section" style="display: none;">
+            <h3 style="margin-bottom: 15px; color: #333;">📍 位置情報</h3>
+            <div class="info-item">
+                <span class="info-label">緯度 (Latitude):</span>
+                <span class="info-value" id="latitude">-</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">経度 (Longitude):</span>
+                <span class="info-value" id="longitude">-</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">精度 (Accuracy):</span>
+                <span class="info-value" id="accuracy">-</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">高度 (Altitude):</span>
+                <span class="info-value" id="altitude">-</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">方角 (Heading):</span>
+                <span class="info-value" id="heading">-</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">速度 (Speed):</span>
+                <span class="info-value" id="speed">-</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">取得時刻 (Timestamp):</span>
+                <span class="info-value" id="timestamp">-</span>
+            </div>
+        </div>
+
+        <div class="map-container" id="mapContainer" style="display: none;">
+            <div class="map-placeholder">
+                <p>📍 Google Mapsリンク:</p>
+                <a id="mapLink" href="#" target="_blank" style="color: #667eea; font-weight: 600;">地図で表示</a>
+            </div>
+        </div>
+
+        <div class="feature-list">
+            <h3>🔧 機能一覧</h3>
+            <ul>
+                <li>現在位置の取得 (getCurrentPosition)</li>
+                <li>リアルタイム位置監視 (watchPosition)</li>
+                <li>位置情報の詳細表示（緯度・経度・精度など）</li>
+                <li>Google Mapsへのリンク</li>
+                <li>エラーハンドリング</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let watchId = null;
+        let isWatching = false;
+
+        // DOM elements
+        const getCurrentPositionBtn = document.getElementById('getCurrentPosition');
+        const watchPositionBtn = document.getElementById('watchPosition');
+        const stopWatchingBtn = document.getElementById('stopWatching');
+        const statusDiv = document.getElementById('status');
+        const locationInfoDiv = document.getElementById('locationInfo');
+        const mapContainer = document.getElementById('mapContainer');
+        const mapLink = document.getElementById('mapLink');
+
+        // Check if Geolocation API is supported
+        function checkGeolocationSupport() {
+            if (!navigator.geolocation) {
+                showStatus('お使いのブラウザはGeolocation APIをサポートしていません。', 'error');
+                getCurrentPositionBtn.disabled = true;
+                watchPositionBtn.disabled = true;
+                return false;
+            }
+            return true;
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        // Update location display
+        function updateLocationDisplay(position) {
+            const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = position.coords;
+            const timestamp = new Date(position.timestamp);
+
+            document.getElementById('latitude').textContent = latitude.toFixed(6);
+            document.getElementById('longitude').textContent = longitude.toFixed(6);
+            document.getElementById('accuracy').textContent = accuracy ? `${accuracy.toFixed(2)} m` : '-';
+            document.getElementById('altitude').textContent = altitude !== null ? `${altitude.toFixed(2)} m` : '利用不可';
+            document.getElementById('heading').textContent = heading !== null ? `${heading.toFixed(2)}°` : '利用不可';
+            document.getElementById('speed').textContent = speed !== null ? `${speed.toFixed(2)} m/s` : '利用不可';
+            document.getElementById('timestamp').textContent = timestamp.toLocaleString('ja-JP');
+
+            // Update map link
+            mapLink.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+            // Show location info and map
+            locationInfoDiv.style.display = 'block';
+            mapContainer.style.display = 'flex';
+
+            showStatus('位置情報を取得しました！', 'success');
+        }
+
+        // Handle geolocation error
+        function handleError(error) {
+            let errorMessage = '';
+            
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = '位置情報の取得が拒否されました。ブラウザの設定を確認してください。';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = '位置情報が利用できません。';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = '位置情報の取得がタイムアウトしました。';
+                    break;
+                default:
+                    errorMessage = '位置情報の取得中にエラーが発生しました。';
+            }
+
+            showStatus(errorMessage, 'error');
+            
+            // Stop watching if there's an error
+            if (isWatching) {
+                stopWatchingPosition();
+            }
+        }
+
+        // Get current position (one-time)
+        function getCurrentPosition() {
+            showStatus('位置情報を取得中...', 'loading');
+
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                updateLocationDisplay,
+                handleError,
+                options
+            );
+        }
+
+        // Start watching position (continuous)
+        function startWatchingPosition() {
+            showStatus('位置監視を開始しました...', 'loading');
+
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    updateLocationDisplay(position);
+                    if (!isWatching) {
+                        isWatching = true;
+                        updateButtonStates();
+                    }
+                },
+                handleError,
+                options
+            );
+        }
+
+        // Stop watching position
+        function stopWatchingPosition() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                isWatching = false;
+                updateButtonStates();
+                showStatus('位置監視を停止しました。', 'success');
+            }
+        }
+
+        // Update button states
+        function updateButtonStates() {
+            if (isWatching) {
+                getCurrentPositionBtn.disabled = true;
+                watchPositionBtn.disabled = true;
+                stopWatchingBtn.disabled = false;
+                watchPositionBtn.innerHTML = '<span class="watch-status">監視中</span>';
+            } else {
+                getCurrentPositionBtn.disabled = false;
+                watchPositionBtn.disabled = false;
+                stopWatchingBtn.disabled = true;
+                watchPositionBtn.textContent = '位置監視を開始';
+            }
+        }
+
+        // Event listeners
+        getCurrentPositionBtn.addEventListener('click', getCurrentPosition);
+        watchPositionBtn.addEventListener('click', startWatchingPosition);
+        stopWatchingBtn.addEventListener('click', stopWatchingPosition);
+
+        // Initialize
+        checkGeolocationSupport();
+    </script>
+</body>
+</html>
