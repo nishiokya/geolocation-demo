@@ -37,7 +37,9 @@ geolocation apiのdemo
 
 ## デモ
 
-GitHub Pagesでホストされている場合: https://nishiokya.github.io/geolocation-demo/
+ローカルで実行: `index.html` をブラウザで開く
+
+GitHub Pagesでホスト可能: `https://<username>.github.io/geolocation-demo/`
 
 ## ライセンス
 
